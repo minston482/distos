@@ -31,11 +31,11 @@ struct queueHeader Qheader = {NULL,};
 int main(int argc, char* argv[]) {
 	struct timeval te;
 	long long milliseconds;
-	pthread_t p1, p2, p3, p4;
+	int thread_size = atoi(argv[1]), i = 0;
+	pthread_t *p = (pthread_t *) malloc (sizeof(pthread_t) * thread_size);
 	struct queueNode *startNode = (struct queueNode *)malloc(sizeof(struct queueNode));
 	
 	gettimeofday(&te, NULL);
-//	milliseconds = ((te.tv_sec) * 100000) + te.tv_usec;
 	milliseconds = clock();
 	printf("%lld start\n", milliseconds);
 
@@ -44,21 +44,16 @@ int main(int argc, char* argv[]) {
 	Qheader.head = startNode;
 	Qheader.tail = startNode;
 
-	pthread_create(&p1, NULL, hwthread, NULL);
-	pthread_create(&p2, NULL, hwthread, NULL);
-	pthread_create(&p3, NULL, hwthread, NULL);
-	pthread_create(&p4, NULL, hwthread, NULL);
-
-	pthread_join(p1, NULL);
-	pthread_join(p2, NULL);
-	pthread_join(p3, NULL);
-	pthread_join(p4, NULL);
+	for(i = 0; i < thread_size; i++) 
+		pthread_create(&p[i], NULL, hwthread, NULL);
+	
+	for(i = 0; i < thread_size; i++) 
+		pthread_join(p[i], NULL);
 
 	if(!isEmpty(&Qheader))
 		printf(" Q isn't empty\n");
 	
 	gettimeofday(&te, NULL);
-	//milliseconds = ((te.tv_sec) * 100000) + te.tv_usec;
 	milliseconds = clock();
 	printf("%lld end\n", milliseconds);
 
