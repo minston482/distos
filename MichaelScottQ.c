@@ -17,6 +17,7 @@ struct queueNode {
 struct queueHeader {
 	struct queueNode *head;
 	struct queueNode *tail;
+	/* fine-grained lock */
 	pthread_mutex_t h_lock;
 	pthread_mutex_t t_lock;
 };
@@ -35,6 +36,7 @@ int main(int argc, char* argv[]) {
 	pthread_t *p = (pthread_t *) malloc (sizeof(pthread_t) * thread_size);
 	struct queueNode *startNode = (struct queueNode *)malloc(sizeof(struct queueNode));
 	
+	/* start time check */
 	gettimeofday(&te, NULL);
 	milliseconds = clock();
 	printf("%lld start\n", milliseconds);
@@ -44,15 +46,19 @@ int main(int argc, char* argv[]) {
 	Qheader.head = startNode;
 	Qheader.tail = startNode;
 
+	/* create threads */
 	for(i = 0; i < thread_size; i++) 
 		pthread_create(&p[i], NULL, hwthread, NULL);
 	
+	/* wait threads */
 	for(i = 0; i < thread_size; i++) 
 		pthread_join(p[i], NULL);
 
+	/* check the Q */
 	if(!isEmpty(&Qheader))
 		printf(" Q isn't empty\n");
 	
+	/* end time check */
 	gettimeofday(&te, NULL);
 	milliseconds = clock();
 	printf("%lld end\n", milliseconds);
@@ -64,6 +70,7 @@ void *hwthread(void *arg) {
 	int i = 0;
 	int *key = NULL;
 	
+	/* 1 million loop */
 	for (i = 0; i<1000000;i++){
 		enqueue(&Qheader, i);
 		key = dequeue(&Qheader);
@@ -80,6 +87,7 @@ void enqueue(struct queueHeader *qh, int key) {
 	newNode->key = key;
 	newNode->next = NULL;
 
+	/* fine-grained lock */
 	pthread_mutex_lock(&qh->t_lock);
 	qh->tail->next = newNode;
 	qh->tail = newNode;
@@ -90,6 +98,7 @@ void enqueue(struct queueHeader *qh, int key) {
 int* dequeue(struct queueHeader *qh) {
 	struct queueNode *delNode = NULL, *preheadNode = NULL;
 	
+	/* fine-grained lock */
 	pthread_mutex_lock(&qh->h_lock);
 	preheadNode = qh->head;
 	if (qh->head->next) {
